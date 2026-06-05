@@ -1,26 +1,25 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYxD4LdYf9WGF7jsRetYC5fgNuw_vmX4KiYLLRDaEu_cl_6ZX9LTP7IJKYOzHkOOkgRw/exec'; 
 const databaseAnggota = [
-    "Agustinus Wahyu Wibowo_124230028_Sistem Informasi.JPG",
-    "Aldi Ardianto_134230121_Agroteknologi.JPG",
-    "Cintya Laura Riyanto_153230222_Ilmu Komunikasi.JPG",
-    "Gea Sheila Regita Paramita_143230157_Ekonomi Pembangunan.JPG",
-    "Lailatul Karimah_135230052_Agribisnis.JPG",
-    "Muhammad Azzam Afif_142230351_Akuntansi.JPG",
-    "Puspita Wati Hapsari_141230647_Manajemen.JPG",
-    "Reina Anggraeni Tsany_121230190_Teknik Kimia (S1).JPG",
-    "Stefanie Nadya Kusumaningrum_112220176_Teknik Pertambangan.JPG",
-    "Taqy Athaya Dzakwan Mungin_113230211_Teknik Perminyakan.JPG"
+    "Agustinus Wahyu Wibowo_124230028_Sistem Informasi.jpg",
+    "Aldi Ardianto_134230121_Agroteknologi.jpg",
+    "Cintya Laura Riyanto_153230222_Ilmu Komunikasi.jpg",
+    "Gea Sheila Regita Paramita_143230157_Ekonomi Pembangunan.jpg",
+    "Lailatul Karimah_135230052_Agribisnis.jpg",
+    "Muhammad Azzam Afif_142230351_Akuntansi.jpg",
+    "Puspita Wati Hapsari_ 141230647_Manajemen.jpg",
+    "Reina Anggraeni Tsany_121230190_Teknik Kimia (S1).jpg",
+    "Stefanie Nadya Kusumaningrum_112220176_Teknik Pertambangan.jpg",
+    "Taqy Athaya Dzakwan Mungin_113230211_Teknik Perminyakan.jpg"
 ];
 
 let loadedFaceDescriptors = [];
+let isDatabaseReady = false; // Penanda apakah foto sudah selesai diproses AI
 
 // --- 1. SINKRONISASI INITIALIZATION & SPLASH SCREEN ---
 document.addEventListener("DOMContentLoaded", async () => {
-    const statusText = document.getElementById('status-absen');
-    
     try {
-        console.log("1. Memuat Model AI...");
-        // Jalankan loading model secara paralel
+        console.log("1. Memuat Model AI Inti...");
+        // Jalankan loading model secara paralel (Biasanya sangat cepat karena cache Vercel)
         await Promise.all([
             faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
             faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
@@ -28,19 +27,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         ]);
         console.log("Model AI Berhasil Dimuat.");
 
-        // Load gambar referensi sampai selesai
-        await loadReferenceImages();
+        // LANGSUNG HILANGKAN SPLASH SCREEN (TIDAK PERLU NUNGGU FOTO)
+        setTimeout(() => {
+            document.getElementById('splash-screen').classList.add('fade-out');
+            const mainContent = document.getElementById('main-content');
+            mainContent.classList.remove('hidden');
+            mainContent.classList.add('fade-in');
+        }, 1000); // Munculkan menu utama setelah 1 detik
 
-        // JIKA SEMUA SUDAH SIAP, HILANGKAN SPLASH SCREEN
-        console.log("Semua sistem siap! Membuka Dashboard.");
-        document.getElementById('splash-screen').classList.add('fade-out');
-        const mainContent = document.getElementById('main-content');
-        mainContent.classList.remove('hidden');
-        mainContent.classList.add('fade-in');
+        // Load gambar referensi DI LATAR BELAKANG (Agar tidak nge-lag di layar awal)
+        loadReferenceImagesInBackground();
 
     } catch (error) {
         console.error("Inisialisasi Gagal:", error);
-        alert("Gagal memuat sistem absensi. Silakan buka Inspect Element (F12) untuk melihat error.");
+        alert("Gagal memuat file sistem utama. Periksa koneksi internet.");
     }
 });
 
@@ -60,7 +60,7 @@ btnAbsen.addEventListener('click', async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
         video.srcObject = stream;
     } catch (err) {
-        alert("Gagal mengakses kamera. Pastikan izin kamera diberikan.");
+        alert("Gagal mengakses kamera. Pastikan izin kamera diberikan saat pop-up muncul.");
     }
 });
 
@@ -73,36 +73,54 @@ btnIzin.addEventListener('click', () => {
     }
 });
 
-// --- 3. FACE RECOGNITION LOGIC ---
-async function loadReferenceImages() {
-    console.log("2. Memproses Database Gambar...");
+// --- 3. BACKGROUND FACE RECOGNITION LOGIC ---
+async function loadReferenceImagesInBackground() {
+    console.log("2. Memproses Database Gambar di Latar Belakang...");
+    const btnScan = document.getElementById('btn-scan');
+    const scanText = document.getElementById('scan-text');
     let successCount = 0;
+
+    // Kunci tombol Scan selama AI masih belajar mengenali wajah
+    btnScan.disabled = true;
+    btnScan.classList.add('opacity-60', 'cursor-not-allowed');
+    scanText.innerText = "Mempersiapkan AI Wajah...";
 
     for (const filename of databaseAnggota) {
         try {
-            const img = await faceapi.fetchImage(encodeURI(`./database_wajah/${filename}`));
+            // Path menggunakan garis miring / langsung dan encodeURI
+            const img = await faceapi.fetchImage(encodeURI(`/database_wajah/${filename}`));
             const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
             
             if (detections) {
                 const labelData = filename.replace('.jpg', '').replace('.jpeg', '').replace('.png', '');
                 loadedFaceDescriptors.push(new faceapi.LabeledFaceDescriptors(labelData, [detections.descriptor]));
                 successCount++;
-                console.log(`[SUKSES] Terdaftar: ${labelData}`);
-            } else {
-                console.warn(`[GAGAL DETEKSI] Wajah tidak terbaca di file: ${filename}. Pastikan muka menghadap depan dan jelas.`);
+                
+                // Beri tahu user progresnya secara real-time di tombol
+                scanText.innerText = `Memproses AI (${successCount}/${databaseAnggota.length})...`;
             }
         } catch (e) {
-            console.error(`[ERROR 404 / FILE RUSAK] Tidak bisa memuat file: ${filename}. Periksa nama/ekstensi file!`);
+            console.warn(`Melewati file yang gagal dimuat: ${filename}`);
         }
     }
-    console.log(`Selesai mendata wajah. Berhasil mendaftarkan ${successCount} dari ${databaseAnggota.length} anggota.`);
     
+    console.log(`Berhasil mendaftarkan ${successCount} anggota.`);
+    
+    // Buka kunci tombol setelah selesai
+    isDatabaseReady = true;
+    btnScan.disabled = false;
+    btnScan.classList.remove('opacity-60', 'cursor-not-allowed');
+    scanText.innerText = "Mulai Scan Wajah";
+
     if(successCount === 0) {
-        throw new Error("Tidak ada satu pun wajah anggota yang berhasil didaftarkan ke database AI.");
+        scanText.innerText = "Database Wajah Gagal Dimuat";
+        btnScan.disabled = true;
     }
 }
 
 document.getElementById('btn-scan').addEventListener('click', async () => {
+    if(!isDatabaseReady) return; // Mencegah user memaksa klik saat loading
+
     const statusText = document.getElementById('status-absen');
     const btnText = document.getElementById('scan-text');
     const spinner = document.getElementById('scan-spinner');
@@ -112,26 +130,22 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
     btnText.innerText = "Memproses...";
     spinner.classList.remove('hidden');
 
-    // 1. Ambil Lokasi GPS
+    // 1. Ambil Lokasi GPS (Tetap pakai sistem alamat OpenStreetMap)
     navigator.geolocation.getCurrentPosition(async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-        let lokasi = `${lat}, ${lng}`; // Nilai default jika API Alamat gagal
+        let lokasi = `${lat}, ${lng}`; 
 
-        // --- PERUBAHAN: Reverse Geocoding ke OpenStreetMap ---
         try {
             statusText.innerText = "Menerjemahkan lokasi koordinat...";
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
             const data = await response.json();
-            
-            if (data && data.display_name) {
-                lokasi = data.display_name; // Mengisi variabel lokasi dengan alamat teks lengkap
-            }
+            if (data && data.display_name) { lokasi = data.display_name; }
         } catch (error) {
-            console.warn("Gagal mengambil alamat teks. Menggunakan koordinat default (lat, lng).", error);
+            console.warn("Gagal mengambil alamat teks.", error);
         }
 
-        statusText.innerText = "Memproses wajah kamera...";
+        statusText.innerText = "Mencocokkan wajah kamera...";
 
         // 2. Ambil snapshot wajah dari kamera
         const canvas = document.createElement('canvas');
@@ -143,22 +157,22 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
         const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
 
         if (!detection) {
-            resetButton(statusText, btnText, spinner, "Wajah tidak terdeteksi oleh kamera. Coba tegakkan posisi wajah.", "text-red-600");
+            resetButton(statusText, btnText, spinner, "Wajah tidak terdeteksi oleh kamera. Coba terang/tegakkan wajah.", "text-red-600");
             return;
         }
 
-        // 3. Cocokkan Wajah (Threshold diubah ke 0.6 agar lebih fleksibel)
+        // 3. Cocokkan Wajah (Threshold 0.6)
         const faceMatcher = new faceapi.FaceMatcher(loadedFaceDescriptors, 0.6); 
         const match = faceMatcher.findBestMatch(detection.descriptor);
 
         if (match.label === "unknown") {
-            resetButton(statusText, btnText, spinner, "Wajah tidak dikenali di database.", "text-red-600");
+            resetButton(statusText, btnText, spinner, "Wajah tidak dikenali di database KKN.", "text-red-600");
             return;
         }
 
-        // 4. Jika Cocok, pisahkan data berdasarkan format nama_nim_prodi
+        // 4. Jika Cocok
         const [nama, nim, prodi] = match.label.split('_');
-        statusText.innerText = `Halo ${nama.trim()}! Menyimpan data kehadiran...`;
+        statusText.innerText = `Halo ${nama.trim()}! Mengirim data ke server...`;
 
         // 5. Kirim Data ke Spreadsheet
         fetch(SCRIPT_URL, {
@@ -168,7 +182,7 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
                 nama: nama.trim(),
                 nim: nim.trim(),
                 prodi: prodi.trim(),
-                lokasi: lokasi, // Data berupa nama jalan/desa/kecamatan/provinsi lengkap
+                lokasi: lokasi,
                 image: imageBase64
             })
         }).then(response => response.json())
@@ -181,7 +195,7 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
           });
 
     }, (error) => {
-        resetButton(statusText, btnText, spinner, "Gagal mendapatkan lokasi GPS. Izinkan akses lokasi.", "text-red-600");
+        resetButton(statusText, btnText, spinner, "Gagal mendapatkan lokasi GPS. Izinkan akses lokasi di pengaturan browser.", "text-red-600");
     });
 });
 
@@ -192,7 +206,7 @@ function resetButton(statusEl, btnTextEl, spinnerEl, msg, colorClass) {
     spinnerEl.classList.add('hidden');
 }
 
-// --- 4. FORM PERIZINAN LOGIC ---
+// --- 4. FORM PERIZINAN LOGIC ---(Instant access)
 document.getElementById('form-izin').addEventListener('submit', (e) => {
     e.preventDefault();
     const btnSubmit = e.target.querySelector('button');
@@ -211,7 +225,7 @@ document.getElementById('form-izin').addEventListener('submit', (e) => {
         body: JSON.stringify(payload)
     }).then(res => res.json()).then(data => {
         if(data.status === 'success') {
-            alert("Perizinan berhasil dikirim!");
+            alert("Data perizinan berhasil direkam ke dalam sistem!");
             document.getElementById('form-izin').reset();
             btnSubmit.innerText = "Kirim Perizinan";
         }
