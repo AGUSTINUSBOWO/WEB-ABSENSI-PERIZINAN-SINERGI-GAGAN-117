@@ -13,13 +13,12 @@ const databaseAnggota = [
 ];
 
 let loadedFaceDescriptors = [];
-let isDatabaseReady = false; // Penanda apakah foto sudah selesai diproses AI
+let isDatabaseReady = false; 
 
 // --- 1. SINKRONISASI INITIALIZATION & SPLASH SCREEN ---
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         console.log("1. Memuat Model AI Inti...");
-        // Jalankan loading model secara paralel (Biasanya sangat cepat karena cache Vercel)
         await Promise.all([
             faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
             faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
@@ -27,15 +26,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         ]);
         console.log("Model AI Berhasil Dimuat.");
 
-        // LANGSUNG HILANGKAN SPLASH SCREEN (TIDAK PERLU NUNGGU FOTO)
+        // LANGSUNG HILANGKAN SPLASH SCREEN
         setTimeout(() => {
             document.getElementById('splash-screen').classList.add('fade-out');
             const mainContent = document.getElementById('main-content');
             mainContent.classList.remove('hidden');
             mainContent.classList.add('fade-in');
-        }, 1000); // Munculkan menu utama setelah 1 detik
+        }, 1000); 
 
-        // Load gambar referensi DI LATAR BELAKANG (Agar tidak nge-lag di layar awal)
+        // Jalankan pemrosesan foto di latar belakang
         loadReferenceImagesInBackground();
 
     } catch (error) {
@@ -80,46 +79,47 @@ async function loadReferenceImagesInBackground() {
     const scanText = document.getElementById('scan-text');
     let successCount = 0;
 
-    // Kunci tombol Scan selama AI masih belajar mengenali wajah
     btnScan.disabled = true;
     btnScan.classList.add('opacity-60', 'cursor-not-allowed');
     scanText.innerText = "Mempersiapkan AI Wajah...";
 
     for (const filename of databaseAnggota) {
         try {
-            // Path menggunakan garis miring / langsung dan encodeURI
-            const img = await faceapi.fetchImage(encodeURI(`/database_wajah/${filename}`));
+            // Menggunakan ./ agar konsisten dengan folder models
+            const path = encodeURI(`./database_wajah/${filename}`);
+            const img = await faceapi.fetchImage(path);
             const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
             
             if (detections) {
                 const labelData = filename.replace('.jpg', '').replace('.jpeg', '').replace('.png', '');
                 loadedFaceDescriptors.push(new faceapi.LabeledFaceDescriptors(labelData, [detections.descriptor]));
                 successCount++;
-                
-                // Beri tahu user progresnya secara real-time di tombol
+                console.log(`✅ Berhasil mendata wajah: ${filename}`);
                 scanText.innerText = `Memproses AI (${successCount}/${databaseAnggota.length})...`;
+            } else {
+                console.warn(`⚠️ Wajah tidak terdeteksi di dalam file foto: ${filename}`);
             }
         } catch (e) {
-            console.warn(`Melewati file yang gagal dimuat: ${filename}`);
+            console.error(`❌ Gagal memuat file foto: ${filename}`, e);
         }
     }
     
-    console.log(`Berhasil mendaftarkan ${successCount} anggota.`);
+    console.log(`Selesai mendata wajah. Berhasil mendaftarkan ${successCount} dari ${databaseAnggota.length} anggota.`);
     
-    // Buka kunci tombol setelah selesai
-    isDatabaseReady = true;
-    btnScan.disabled = false;
-    btnScan.classList.remove('opacity-60', 'cursor-not-allowed');
-    scanText.innerText = "Mulai Scan Wajah";
-
-    if(successCount === 0) {
+    if (successCount > 0) {
+        isDatabaseReady = true;
+        btnScan.disabled = false;
+        btnScan.classList.remove('opacity-60', 'cursor-not-allowed');
+        scanText.innerText = "Mulai Scan Wajah";
+    } else {
+        isDatabaseReady = false;
         scanText.innerText = "Database Wajah Gagal Dimuat";
         btnScan.disabled = true;
     }
 }
 
 document.getElementById('btn-scan').addEventListener('click', async () => {
-    if(!isDatabaseReady) return; // Mencegah user memaksa klik saat loading
+    if(!isDatabaseReady) return; 
 
     const statusText = document.getElementById('status-absen');
     const btnText = document.getElementById('scan-text');
@@ -130,7 +130,6 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
     btnText.innerText = "Memproses...";
     spinner.classList.remove('hidden');
 
-    // 1. Ambil Lokasi GPS (Tetap pakai sistem alamat OpenStreetMap)
     navigator.geolocation.getCurrentPosition(async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
@@ -147,7 +146,6 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
 
         statusText.innerText = "Mencocokkan wajah kamera...";
 
-        // 2. Ambil snapshot wajah dari kamera
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -161,7 +159,6 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
             return;
         }
 
-        // 3. Cocokkan Wajah (Threshold 0.6)
         const faceMatcher = new faceapi.FaceMatcher(loadedFaceDescriptors, 0.6); 
         const match = faceMatcher.findBestMatch(detection.descriptor);
 
@@ -170,11 +167,9 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
             return;
         }
 
-        // 4. Jika Cocok
         const [nama, nim, prodi] = match.label.split('_');
         statusText.innerText = `Halo ${nama.trim()}! Mengirim data ke server...`;
 
-        // 5. Kirim Data ke Spreadsheet
         fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
@@ -206,7 +201,7 @@ function resetButton(statusEl, btnTextEl, spinnerEl, msg, colorClass) {
     spinnerEl.classList.add('hidden');
 }
 
-// --- 4. FORM PERIZINAN LOGIC ---(Instant access)
+// --- 4. FORM PERIZINAN LOGIC ---
 document.getElementById('form-izin').addEventListener('submit', (e) => {
     e.preventDefault();
     const btnSubmit = e.target.querySelector('button');
