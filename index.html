@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi KKN Sinergi Gagan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans h-screen overflow-hidden">
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-1000">
+        <img src="assets/logo.png" alt="Logo KKN" class="w-40 h-40 mb-6 animate-pulse">
+        <h1 class="text-2xl font-bold text-blue-700 tracking-wider">Absensi dan Perizinan</h1>
+        <h2 class="text-xl text-green-600 mt-2">Sinergi Gagan</h2>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="main-content" class="hidden h-full flex flex-col items-center p-6">
+        
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mt-10">
+            <h2 class="text-center text-2xl font-bold text-gray-700 mb-6">Pilih Menu</h2>
+            
+            <div class="flex gap-4 mb-8">
+                <button id="btn-absen" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold shadow hover:bg-blue-700 transition">Absen</button>
+                <button id="btn-izin" class="flex-1 bg-yellow-500 text-white py-3 rounded-lg font-semibold shadow hover:bg-yellow-600 transition">Perizinan</button>
+            </div>
+
+            <!-- Area Absen -->
+            <div id="area-absen" class="hidden flex flex-col items-center">
+                <p class="text-sm text-gray-500 mb-4 text-center">Arahkan wajah ke kamera. Sistem akan mencocokkan dengan database.</p>
+                <div class="relative w-full h-64 bg-black rounded-lg overflow-hidden mb-4">
+                    <video id="kamera" class="w-full h-full object-cover" autoplay muted></video>
+                    <canvas id="overlay" class="absolute top-0 left-0 w-full h-full"></canvas>
+                </div>
+                <button id="btn-scan" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold shadow hover:bg-green-700 transition flex items-center justify-center">
+                    <span id="scan-text">Mulai Scan Wajah</span>
+                    <svg id="scan-spinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+                <p id="status-absen" class="mt-3 text-sm font-semibold text-center"></p>
+            </div>
+
+            <!-- Area Izin -->
+            <div id="area-izin" class="hidden">
+                <form id="form-izin" class="space-y-4">
+                    <input type="text" id="izin-nama" placeholder="Nama Lengkap" required class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-200">
+                    <input type="text" id="izin-nim" placeholder="NIM" required class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-200">
+                    <input type="text" id="izin-prodi" placeholder="Program Studi" required class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-200">
+                    <textarea id="izin-alasan" placeholder="Alasan Izin (Sakit/Keperluan Lain)" required class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-200 h-24"></textarea>
+                    <button type="submit" class="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold shadow hover:bg-yellow-600 transition">Kirim Perizinan</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
