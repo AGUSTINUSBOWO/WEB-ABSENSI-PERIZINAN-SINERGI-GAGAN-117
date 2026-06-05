@@ -1,15 +1,15 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYxD4LdYf9WGF7jsRetYC5fgNuw_vmX4KiYLLRDaEu_cl_6ZX9LTP7IJKYOzHkOOkgRw/exec'; 
 const databaseAnggota = [
-    "Agustinus Wahyu Wibowo_124230028_Sistem Informasi.jpg",
-    "Aldi Ardianto_134230121_Agroteknologi.jpg",
-    "Cintya Laura Riyanto_153230222_Ilmu Komunikasi.jpg",
-    "Gea Sheila Regita Paramita_143230157_Ekonomi Pembangunan.jpg",
-    "Lailatul Karimah_135230052_Agribisnis.jpg",
-    "Muhammad Azzam Afif_142230351_Akuntansi.jpg",
-    "Puspita Wati Hapsari_ 141230647_Manajemen.jpg", // Pastikan nama file aslimu juga ada spasinya seperti ini ya!
-    "Reina Anggraeni Tsany_121230190_Teknik Kimia (S1).jpg",
-    "Stefanie Nadya Kusumaningrum_112220176_Teknik Pertambangan.jpg",
-    "Taqy Athaya Dzakwan Mungin_113230211_Teknik Perminyakan.jpg"
+    "Agustinus Wahyu Wibowo_124230028_Sistem Informasi",
+    "Aldi Ardianto_134230121_Agroteknologi",
+    "Cintya Laura Riyanto_153230222_Ilmu Komunikasi",
+    "Gea Sheila Regita Paramita_143230157_Ekonomi Pembangunan",
+    "Lailatul Karimah_135230052_Agribisnis",
+    "Muhammad Azzam Afif_142230351_Akuntansi",
+    "Puspita Wati Hapsari_141230647_Manajemen",
+    "Reina Anggraeni Tsany_121230190_Teknik Kimia (S1)",
+    "Stefanie Nadya Kusumaningrum_112220176_Teknik Pertambangan",
+    "Taqy Athaya Dzakwan Mungin_113230211_Teknik Perminyakan"
 ];
 
 let loadedFaceDescriptors = [];
