@@ -1,15 +1,15 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYxD4LdYf9WGF7jsRetYC5fgNuw_vmX4KiYLLRDaEu_cl_6ZX9LTP7IJKYOzHkOOkgRw/exec'; 
 const databaseAnggota = [
-    "Agustinus Wahyu Wibowo_124230028_Sistem Informasi",
-    "Aldi Ardianto_134230121_Agroteknologi",
-    "Cintya Laura Riyanto_153230222_Ilmu Komunikasi",
-    "Gea Sheila Regita Paramita_143230157_Ekonomi Pembangunan",
-    "Lailatul Karimah_135230052_Agribisnis",
-    "Muhammad Azzam Afif_142230351_Akuntansi",
-    "Puspita Wati Hapsari_141230647_Manajemen",
-    "Reina Anggraeni Tsany_121230190_Teknik Kimia (S1)",
-    "Stefanie Nadya Kusumaningrum_112220176_Teknik Pertambangan",
-    "Taqy Athaya Dzakwan Mungin_113230211_Teknik Perminyakan"
+    "Agustinus Wahyu Wibowo_124230028_Sistem Informasi.JPG",
+    "Aldi Ardianto_134230121_Agroteknologi.JPG",
+    "Cintya Laura Riyanto_153230222_Ilmu Komunikasi.JPG",
+    "Gea Sheila Regita Paramita_143230157_Ekonomi Pembangunan.JPG",
+    "Lailatul Karimah_135230052_Agribisnis.JPG",
+    "Muhammad Azzam Afif_142230351_Akuntansi.JPG",
+    "Puspita Wati Hapsari_141230647_Manajemen.JPG",
+    "Reina Anggraeni Tsany_121230190_Teknik Kimia (S1).JPG",
+    "Stefanie Nadya Kusumaningrum_112220176_Teknik Pertambangan.JPG",
+    "Taqy Athaya Dzakwan Mungin_113230211_Teknik Perminyakan.JPG"
 ];
 
 let loadedFaceDescriptors = [];
