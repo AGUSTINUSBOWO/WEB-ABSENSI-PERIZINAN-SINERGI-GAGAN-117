@@ -16,8 +16,15 @@ let loadedFaceDescriptors = [];
 
 // --- 1. SINKRONISASI INITIALIZATION & SPLASH SCREEN ---
 document.addEventListener("DOMContentLoaded", async () => {
-    const statusText = document.getElementById('status-absen');
+    const splashScreen = document.getElementById('splash-screen');
     
+    // Membuat teks loading progress secara dinamis di bawah logo
+    const loadingText = document.createElement('p');
+    loadingText.id = 'loading-progress';
+    loadingText.className = 'text-sm text-blue-600 mt-4 font-semibold animate-pulse text-center px-4';
+    loadingText.innerText = 'Memuat Model AI...';
+    splashScreen.appendChild(loadingText);
+
     try {
         console.log("1. Memuat Model AI...");
         // Jalankan loading model secara paralel
@@ -33,13 +40,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // JIKA SEMUA SUDAH SIAP, HILANGKAN SPLASH SCREEN
         console.log("Semua sistem siap! Membuka Dashboard.");
-        document.getElementById('splash-screen').classList.add('fade-out');
-        const mainContent = document.getElementById('main-content');
-        mainContent.classList.remove('hidden');
-        mainContent.classList.add('fade-in');
+        loadingText.innerText = 'Selesai! Membuka Dashboard...';
+        
+        // Beri jeda 0.5 detik agar tulisan "Selesai" sempat terbaca
+        setTimeout(() => {
+            splashScreen.classList.add('fade-out');
+            const mainContent = document.getElementById('main-content');
+            mainContent.classList.remove('hidden');
+            mainContent.classList.add('fade-in');
+        }, 500);
 
     } catch (error) {
         console.error("Inisialisasi Gagal:", error);
+        loadingText.innerText = 'Gagal memuat sistem. Silakan muat ulang (refresh).';
+        loadingText.classList.replace('text-blue-600', 'text-red-600');
         alert("Gagal memuat sistem absensi. Silakan buka Inspect Element (F12) untuk melihat error.");
     }
 });
@@ -77,14 +91,23 @@ btnIzin.addEventListener('click', () => {
 async function loadReferenceImages() {
     console.log("2. Memproses Database Gambar...");
     let successCount = 0;
+    const loadingText = document.getElementById('loading-progress');
 
-    for (const filename of databaseAnggota) {
+    for (let i = 0; i < databaseAnggota.length; i++) {
+        const filename = databaseAnggota[i];
+        
+        // Update teks di splash screen secara real-time
+        if (loadingText) {
+            loadingText.innerText = `Sedang loading database gambar ${i + 1}/${databaseAnggota.length}, harap ditunggu...`;
+        }
+
         try {
             const img = await faceapi.fetchImage(encodeURI(`./database_wajah/${filename}`));
             const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
             
             if (detections) {
-                const labelData = filename.replace('.jpg', '').replace('.jpeg', '').replace('.png', '');
+                // Menggunakan Regex agar huruf besar .JPG atau .jpg sama-sama terhapus bersih
+                const labelData = filename.replace(/\.(jpe?g|png)$/i, '');
                 loadedFaceDescriptors.push(new faceapi.LabeledFaceDescriptors(labelData, [detections.descriptor]));
                 successCount++;
                 console.log(`[SUKSES] Terdaftar: ${labelData}`);
