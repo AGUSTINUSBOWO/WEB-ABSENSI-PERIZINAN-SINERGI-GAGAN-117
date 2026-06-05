@@ -80,7 +80,7 @@ async function loadReferenceImages() {
 
     for (const filename of databaseAnggota) {
         try {
-            const img = await faceapi.fetchImage(`./database_wajah/${filename}`);
+            const img = await faceapi.fetchImage(encodeURI(`./database_wajah/${filename}`));
             const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
             
             if (detections) {
